@@ -1,0 +1,59 @@
+name: build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    # The default values of the followin inputs are from:
+    # https://github.com/envoyproxy/envoy/blob/73dc561f0c227c03ec6535eaf4c30d16766236a0/bazel/repository_locations.bzl#L142.
+    inputs:
+      boringssl-version:
+        description: 'BoringSSL version'
+        default: 853ca1ea1168dff08011e5d42d94609cc0ca2e27
+        required: true
+      boringssl-sha256:
+        description: 'BoringSSL archive SHA256'
+        default: a4d069ccef6f3c7bc0c68de82b91414f05cb817494cd1ab483dcf3368883c7c2
+        required: true
+      boringssl-source:
+        description: 'BoringSSL archive source'
+        default: https://commondatastorage.googleapis.com/chromium-boringssl-fips/boringssl-853ca1ea1168dff08011e5d42d94609cc0ca2e27.tar.xz
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.boringssl-version || github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner:
+              - self-hosted
+              - arm64
+          - arch: amd64
+            runner: ubuntu-latest
+    steps:
+      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
+      - uses: docker/setup-buildx-action@f95db51fddba0c2d1ec667646a06c2ce06100226 # v3.0.0
+      - name: Run builder
+        run: make
+        env:
+          ARCH: ${{ matrix.arch }}
+          BORINGSSL_VERSION: ${{ inputs.boringssl-version != '' && inputs.boringssl-version || '853ca1ea1168dff08011e5d42d94609cc0ca2e27' }}
+          BORINGSSL_SHA256: ${{ inputs.boringssl-sha256 != '' && inputs.boringssl-sha256 || 'a4d069ccef6f3c7bc0c68de82b91414f05cb817494cd1ab483dcf3368883c7c2' }}
+          BORINGSSL_SOURCE: ${{ inputs.boringssl-source != '' && inputs.boringssl-source || 'https://commondatastorage.googleapis.com/chromium-boringssl-fips/boringssl-853ca1ea1168dff08011e5d42d94609cc0ca2e27.tar.xz' }}
+      - uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
+        with:
+          path: boringssl-fips-${{ env.BORINGSSL_VERSION }}-${{ matrix.arch }}.tar.xz
+          name: boringssl-fips-${{ matrix.arch }}
+        env:
+          BORINGSSL_VERSION: ${{ inputs.boringssl-version != '' && inputs.boringssl-version || '853ca1ea1168dff08011e5d42d94609cc0ca2e27' }}
