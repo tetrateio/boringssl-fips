@@ -37,8 +37,10 @@ jobs:
         include:
           - arch: arm64
             runner:
-              - self-hosted
+              - linux
+              - arc
               - arm64
+              - self-hosted
           # - arch: amd64
           #   runner: ubuntu-latest
     steps:
