@@ -22,6 +22,7 @@ jobs:
               - arm64
           - arch: amd64
             runner:
+              - arc
               - self-hosted
               - x64
     steps:
