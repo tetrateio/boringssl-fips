@@ -11,26 +11,24 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - arch: arm64
-            runner:
-              - self-hosted
-              - arm64
-          - arch: amd64
-            runner: ubuntu-latest
+        arch:
+          - arm64
+          - amd64
+
     steps:
-      - uses: actions/checkout@e2f20e631ae6d7dd3b768f56a5d2af784dd54791 # v2.5.0
-      - uses: docker/setup-buildx-action@885d1462b80bc1c1c7f0b00334ad271f09369c55 # v2.10.0
+      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
+      - uses: docker/setup-qemu-action@68827325e0b33c7199eb31dd4e31fbe9023e06e3 # v3.0.0
+      - uses: docker/setup-buildx-action@f95db51fddba0c2d1ec667646a06c2ce06100226 # v3.0.0
       - name: Run builder
         run: make
         env:
           TAG: ${{ github.ref_name || github.ref }}
           ARCH: ${{ matrix.arch }}
-      - uses: actions/upload-artifact@6673cd052c4cd6fcf4b4e6e60ea986c889389535 # v2.3.1
+      - uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           path: boringssl-fips-${{ env.TAG }}-${{ matrix.arch }}.tar.xz
           name: boringssl-fips-${{ matrix.arch }}

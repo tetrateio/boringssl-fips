@@ -119,8 +119,13 @@ tar -xJf boringssl-"$VERSION".tar.xz
 cd boringssl
 mkdir build && cd build && cmake -GNinja -DCMAKE_TOOLCHAIN_FILE=${HOME}/toolchain -DFIPS=1 -DCMAKE_BUILD_TYPE=Release ..
 ninja
-ninja run_tests
-./crypto/crypto_test
+
+# We skip tests on aarch64 because on CI we use QEMU and it's too slow.
+# TODO(dio): Enable tests on aarch64 when we have a reliable aarch64 machine.
+if [[ "$ARCH" == "x86_64" ]]; then
+  ninja run_tests
+  ./crypto/crypto_test
+fi
 
 # The result should be in:
 #   boringssl/build/crypto/libcrypto.a
